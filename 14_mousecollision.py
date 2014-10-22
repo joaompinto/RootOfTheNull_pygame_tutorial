@@ -39,16 +39,21 @@ class Block(pygame.sprite.Sprite):
         self.sound.play()
 
     def update(self, collidable = pygame.sprite.Group(), event=None):
+
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+
         self.rect.x += self.hspeed
-        self.experience_gravity()
+        colliding_left = colliding_right = colliding_up = colliding_down = False
 
         # Check horizontal collisions
         collision_list = pygame.sprite.spritecollide(self, collidable, False)
         for collided_object in collision_list:
             if self.hspeed > 0:
                 self.rect.right = collided_object.rect.left
+                colliding_right = True
             if self.hspeed < 0:
                 self.rect.left = collided_object.rect.right
+                colliding_left = True
 
         self.rect.y += self.vspeed
 
@@ -57,44 +62,39 @@ class Block(pygame.sprite.Sprite):
         for collided_object in collision_list:
             if self.vspeed > 0:
                 self.rect.bottom = collided_object.rect.top
-                self.vspeed = 0
+                colliding_down = True
             if self.vspeed < 0:
                 self.rect.top = collided_object.rect.bottom
-                self.vspeed = 0
+                colliding_up = True
 
-        if event:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                        self.change_speed(-self.speed, 0)
-                if event.key == pygame.K_RIGHT:
-                    self.change_speed(self.speed, 0)
-                if event.key == pygame.K_UP:
-                    if len(collision_list) > 0:  # Only jump when hitting in the ground
-                        self.change_speed(0, -self.speed*2)
-                if event.key == pygame.K_DOWN:
-                    #self.change_speed(0, self.speed)
-                    pass
-            if event.type == pygame.KEYUP:  # Reset current speed
-                if event.key == pygame.K_LEFT:
-                    if self.hspeed != 0:
-                        self.hspeed = 0
-                if event.key == pygame.K_RIGHT:
-                    if self.hspeed != 0:
-                        self.hspeed = 0
-                if event.key == pygame.K_UP:
-                    #if self.vspeed != 0:
-                    #    self.vspeed = 0
-                    pass
-                if event.key == pygame.K_DOWN:
-                    #if self.vspeed != 0:
-                    #    self.vspeed = 0
-                    pass
 
-    def experience_gravity(self, gravity=.35):
-        if self.vspeed == 0:  # Colliding vertically
-            self.vspeed = 1   # Keep gravity in effect
+        if mouse_x == self.rect.x:
+            self.hspeed = 0
         else:
-            self.vspeed += gravity
+            change = mouse_x - self.rect.x
+            if colliding_left:
+                if change > 0:
+                    self.hspeed = change
+            elif colliding_right:
+                if change < 0:
+                    self.hspeed = change
+            else:
+                self.hspeed = change
+
+        if mouse_y == self.rect.y:
+            self.vspeed = 0
+        else:
+            change = mouse_y - self.rect.y
+            if colliding_down:
+                if change < 0:
+                    self.vspeed = change
+            elif colliding_up:
+                if change > 0:
+                    self.vspeed = change
+            else:
+                self.vspeed = change
+
+
 
 
 def set_message(text):
@@ -137,18 +137,17 @@ if __name__ == "__main__":
     running = True
 
     while running:
-        event = pygame.event.poll()
+        event = pygame.event.poll()  # We handle one event per frame
         if event.type == pygame.MOUSEMOTION:  # Ignore mouse events
             continue
-        #for event in pygame.event.get():
+
         if event.type == pygame.QUIT or \
                 (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
             running = False
 
         clock.tick(frames_per_second)
         window.fill(white)
-        a_block.update(collidable_objects, event)
-        event = None
+        a_block.update(collidable_objects)
         if message != previous_message:
             set_message(message)
         window.blit(message, (window_width/2 - message.get_rect().width/2,
