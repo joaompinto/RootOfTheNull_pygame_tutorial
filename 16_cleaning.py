@@ -6,20 +6,16 @@ import pygame
 from pygame.color import THECOLORS
 
 
-class Block(pygame.sprite.Sprite):
+class Player(pygame.sprite.Sprite):
 
-    def __init__(self, color=THECOLORS['blue'], width=64, height=64):
-        super(Block, self).__init__()
+    def __init__(self, color=THECOLORS['blue'], width=32, height=48):
+        super(Player, self).__init__()
         self.image = pygame.Surface([width, height])
         self.image.fill(color)
         self.set_properties()
-        self.sound = pygame.mixer.Sound("data/metal_gong.wav")
         self.hspeed = 0
         self.vspeed = 0
-
-    def change_speed(self, hspeed, vspeed):
-        self.hspeed += hspeed
-        self.vspeed += vspeed
+        self.level = None
 
     def set_properties(self):
         self.rect = self.image.get_rect()
@@ -31,12 +27,13 @@ class Block(pygame.sprite.Sprite):
         self.rect.x = x - self.origin_x
         self.rect.y = y - self.origin_y
 
-    def set_image(self, filename=None):
-        self.image = pygame.image.load(filename)
-        self.set_properties()
+    def set_level(self, level):
+        self.level = level
+        self.set_position(level.player_start_x, level.player_start_y)
 
-    def play_sound(self):
-        self.sound.play()
+    def set_image(self, filename=None):
+        self.image = pygame.image.load(filename).convert()
+        self.set_properties()
 
     def update(self, collidable = pygame.sprite.Group(), event=None):
         self.rect.x += self.hspeed
@@ -65,36 +62,72 @@ class Block(pygame.sprite.Sprite):
         if event:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                        self.change_speed(-self.speed, 0)
+                    self.hspeed = -self.speed
                 if event.key == pygame.K_RIGHT:
-                    self.change_speed(self.speed, 0)
+                    self.hspeed = self.speed
                 if event.key == pygame.K_UP:
                     if len(collision_list) > 0:  # Only jump when hitting in the ground
-                        self.change_speed(0, -self.speed*2)
-                if event.key == pygame.K_DOWN:
-                    #self.change_speed(0, self.speed)
-                    pass
+                        self.vspeed = -self.speed*2
+
             if event.type == pygame.KEYUP:  # Reset current speed
                 if event.key == pygame.K_LEFT:
-                    if self.hspeed != 0:
+                    if self.hspeed < 0:
                         self.hspeed = 0
                 if event.key == pygame.K_RIGHT:
-                    if self.hspeed != 0:
+                    if self.hspeed > 0:
                         self.hspeed = 0
-                if event.key == pygame.K_UP:
-                    #if self.vspeed != 0:
-                    #    self.vspeed = 0
-                    pass
-                if event.key == pygame.K_DOWN:
-                    #if self.vspeed != 0:
-                    #    self.vspeed = 0
-                    pass
 
     def experience_gravity(self, gravity=.35):
-        if self.vspeed == 0:  # Colliding vertically
-            self.vspeed = 1   # Keep gravity in effect
+        if self.vspeed == 0:  # Keep applying gravity
+            self.vspeed = 1
         else:
             self.vspeed += gravity
+
+
+class Block(pygame.sprite.Sprite):
+
+    def __init__(self, x, y, width, height, color=THECOLORS['blue']):
+        super(Block, self).__init__()
+        self.image = pygame.Surface([width, height])
+        self.image.fill(color)
+
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+
+class Level(object):
+
+    def __init__(self, player_object):
+        self.object_list = pygame.sprite.Group()
+        self.player_object = player_object
+
+    def update(self):
+        self.object_list.update()
+
+    def draw(self, window):
+        window.fill(THECOLORS['white'])
+        self.object_list.draw(window)
+
+
+class Level_01(Level):
+
+
+    def __init__(self, player_object):
+        super(Level_01, self).__init__(player_object)
+
+        self.player_start = self.player_start_x, self.player_start_y = 100, 0
+
+        level = [
+            # [x, y, width, height, color ]
+            [2, 124, 365, 47, THECOLORS['black']]
+            , [200, 424, 280, 47, THECOLORS['black']]
+        ]
+
+        for block in level:
+            print block
+            new_block = Block(*block)
+            self.object_list.add(new_block)
 
 
 def set_message(text):
@@ -108,7 +141,7 @@ if __name__ == "__main__":
     window_size = window_width, window_height = 640, 480
     window = pygame.display.set_mode(window_size, pygame.RESIZABLE)
 
-    pygame.display.set_caption("Game!")
+    pygame.display.set_caption("Platform!")
 
     white = (255, 255, 255)
 
@@ -116,24 +149,20 @@ if __name__ == "__main__":
     clock = pygame.time.Clock()
     frames_per_second = 60
 
-    block_group = pygame.sprite.Group()
-    a_block = Block()
-    a_block.set_image('data/brick.png')
-    a_block.set_position(window_width/2-150, window_height/2-100)
+    active_object_list = pygame.sprite.Group()
+    player = Player()
+    active_object_list.add(player)
 
-    another_block = Block(THECOLORS['red'])
-    another_block.set_position(window_width/2, window_height/2+80)
+    level_list = []
+    level_list.append(Level_01(player))
+    current_level_number = 0
+    current_level = level_list[current_level_number]
+    player.set_level(current_level)
 
-    more_block = Block(THECOLORS['blue'], 300, 20)
-    more_block.set_position(window_width/2, window_height/2+200)
-    block_group.add(more_block, another_block, a_block)
-    #a_block.play_sound()
 
     font = pygame.font.SysFont("Times New Roman", 30)
     message = previous_message = None
     set_message("Use the arrow keys to move the block")
-    collidable_objects = pygame.sprite.Group()
-    collidable_objects.add(more_block, another_block)
     running = True
 
     while running:
@@ -145,15 +174,22 @@ if __name__ == "__main__":
                 (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
             running = False
 
-        clock.tick(frames_per_second)
-        window.fill(white)
-        a_block.update(collidable_objects, event)
+        # Update functions
+        player.update(current_level.object_list, event)
         event = None
-        if message != previous_message:
-            set_message(message)
-        window.blit(message, (window_width/2 - message.get_rect().width/2,
-                           0))
-        block_group.draw(window)
+
+        current_level.update()
+
+        # Logic Testing
+
+        # Draw everything
+        current_level.draw(window)
+        active_object_list.draw(window)
+
+        # Delay Framerate
+        clock.tick(frames_per_second)
+
+        # Update the screen
         pygame.display.update()
 
-pygame.quit()
+    pygame.quit()

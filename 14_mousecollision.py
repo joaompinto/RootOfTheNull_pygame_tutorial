@@ -9,7 +9,7 @@ from pygame.color import THECOLORS
 class Block(pygame.sprite.Sprite):
 
     def __init__(self, color=THECOLORS['blue'], width=64, height=64):
-        pygame.sprite.Sprite.__init__(self)
+        super(Block, self).__init__()
         self.image = pygame.Surface([width, height])
         self.image.fill(color)
         self.set_properties()
