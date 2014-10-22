@@ -8,7 +8,7 @@ from pygame.color import THECOLORS
 
 class Player(pygame.sprite.Sprite):
 
-    def __init__(self, color=THECOLORS['blue'], width=32, height=48):
+    def __init__(self, color=THECOLORS['blue'], width=48, height=64):
         super(Player, self).__init__()
         self.image = pygame.Surface([width, height])
         self.image.fill(color)
@@ -16,6 +16,10 @@ class Player(pygame.sprite.Sprite):
         self.hspeed = 0
         self.vspeed = 0
         self.level = None
+
+    def change_speed(self, hspeed, vspeed):
+        self.hspeed += hspeed
+        self.vspeed += vspeed
 
     def set_properties(self):
         self.rect = self.image.get_rect()
@@ -27,12 +31,8 @@ class Player(pygame.sprite.Sprite):
         self.rect.x = x - self.origin_x
         self.rect.y = y - self.origin_y
 
-    def set_level(self, level):
-        self.level = level
-        self.set_position(level.player_start_x, level.player_start_y)
-
     def set_image(self, filename=None):
-        self.image = pygame.image.load(filename).convert()
+        self.image = pygame.image.load(filename)
         self.set_properties()
 
     def update(self, collidable = pygame.sprite.Group(), event=None):
@@ -62,24 +62,34 @@ class Player(pygame.sprite.Sprite):
         if event:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    self.hspeed = -self.speed
+                        self.change_speed(-self.speed, 0)
                 if event.key == pygame.K_RIGHT:
-                    self.hspeed = self.speed
+                    self.change_speed(self.speed, 0)
                 if event.key == pygame.K_UP:
                     if len(collision_list) > 0:  # Only jump when hitting in the ground
-                        self.vspeed = -self.speed*2
-
+                        self.change_speed(0, -self.speed*2)
+                if event.key == pygame.K_DOWN:
+                    #self.change_speed(0, self.speed)
+                    pass
             if event.type == pygame.KEYUP:  # Reset current speed
                 if event.key == pygame.K_LEFT:
-                    if self.hspeed < 0:
+                    if self.hspeed != 0:
                         self.hspeed = 0
                 if event.key == pygame.K_RIGHT:
-                    if self.hspeed > 0:
+                    if self.hspeed != 0:
                         self.hspeed = 0
+                if event.key == pygame.K_UP:
+                    #if self.vspeed != 0:
+                    #    self.vspeed = 0
+                    pass
+                if event.key == pygame.K_DOWN:
+                    #if self.vspeed != 0:
+                    #    self.vspeed = 0
+                    pass
 
     def experience_gravity(self, gravity=.35):
-        if self.vspeed == 0:  # Keep applying gravity
-            self.vspeed = 1
+        if self.vspeed == 0:  # Colliding vertically
+            self.vspeed = 1   # Keep gravity in effect
         else:
             self.vspeed += gravity
 
@@ -101,7 +111,6 @@ class Level(object):
     def __init__(self, player_object):
         self.object_list = pygame.sprite.Group()
         self.player_object = player_object
-        self.player_start = self.player_start_x, self.player_start_y = 0, 0
 
     def update(self):
         self.object_list.update()
@@ -113,12 +122,8 @@ class Level(object):
 
 class Level_01(Level):
 
-
     def __init__(self, player_object):
         super(Level_01, self).__init__(player_object)
-
-        self.player_start = self.player_start_x, self.player_start_y = 100, 0
-
         level = [
             # [x, y, width, height, color ]
             [2, 124, 365, 47, THECOLORS['black']]
@@ -129,6 +134,7 @@ class Level_01(Level):
             print block
             new_block = Block(*block)
             self.object_list.add(new_block)
+
 
 
 def set_message(text):
@@ -142,7 +148,7 @@ if __name__ == "__main__":
     window_size = window_width, window_height = 640, 480
     window = pygame.display.set_mode(window_size, pygame.RESIZABLE)
 
-    pygame.display.set_caption("Platform!")
+    pygame.display.set_caption("Game!")
 
     white = (255, 255, 255)
 
@@ -152,14 +158,14 @@ if __name__ == "__main__":
 
     active_object_list = pygame.sprite.Group()
     player = Player()
+    player.set_position(40, 40)
     active_object_list.add(player)
 
     level_list = []
     level_list.append(Level_01(player))
     current_level_number = 0
     current_level = level_list[current_level_number]
-    player.set_level(current_level)
-
+    player.level = current_level
 
     font = pygame.font.SysFont("Times New Roman", 30)
     message = previous_message = None
