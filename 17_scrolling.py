@@ -5,7 +5,6 @@
 import pygame
 from pygame.color import THECOLORS
 
-
 class Player(pygame.sprite.Sprite):
 
     def __init__(self, color=THECOLORS['blue'], width=32, height=48):
@@ -106,7 +105,7 @@ class Level(object):
         self.left_viewbox = window_width/2 - window_width/8
         self.right_viewbox = window_width/2 + window_width/10
         self.up_viewbox = window_height/5
-        self.down_viewbox = window_height/2 +window_height/12
+        self.down_viewbox = window_height/2
 
 
     def update(self):
@@ -154,12 +153,28 @@ class Level_01(Level):
     def __init__(self, player_object):
         super(Level_01, self).__init__(player_object)
 
-        self.player_start = self.player_start_x, self.player_start_y = 100, 0
+        self.player_start = self.player_start_x, self.player_start_y = 200, 0
 
         level = [
             # [x, y, width, height, color ]
-            [2, 124, 365, 47, THECOLORS['black']]
-            , [200, 424, 280, 47, THECOLORS['black']]
+            [17, 32, 60, 905, black],
+            [178, 684, 324, 48, black],
+            [135, 861, 47, 10, black],
+            [200, 873, 969, 49, black],
+            [473, 376, 0, 0, black],
+            [475, 376, 161, 95, black],
+            [843, 333, 0, 0, black],
+            [843, 333, 78, 345, black],
+            [143, 282, 211, 207, black],
+            [611, 622, 114, 170, black],
+            [400, 803, 74, 37, black],
+            [761, 768, 120, 50, black],
+            [1069, 392, 0, 0, black],
+            [1069, 392, 67, 455, black],
+            [158, 63, 241, 86, black],
+            [402, 258, 106, 69, black],
+            [633, 207, 173, 101, black],
+            [854, 36, 299, 186, black],
         ]
 
         for block in level:
@@ -176,13 +191,13 @@ def set_message(text):
 if __name__ == "__main__":
     pygame.init()
 
-    window_size = window_width, window_height = 640, 480
+    window_size = window_width, window_height = 1200, 1000
     window = pygame.display.set_mode(window_size, pygame.RESIZABLE)
 
     pygame.display.set_caption("Platform!")
 
     white = (255, 255, 255)
-
+    black = pygame.Color(0, 0, 0)
 
     clock = pygame.time.Clock()
     frames_per_second = 60
